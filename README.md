@@ -11,9 +11,9 @@ This README is a full installation-to-operations guide.
 
 ## OpenTracker in the OpenClaw Ecosystem
 
-OpenTracker is built to serve as the **context engine** of the [OpenClaw](https://github.com/jinyounghwa/OpenClaw) ecosystem — an open-source data infrastructure layer that gives OpenClaw a structured, local understanding of the user.
+OpenTracker is built to serve as the **context engine** of the [OpenClaw](https://openclaw.ai/) ecosystem — an open-source data infrastructure layer that gives OpenClaw a structured, local understanding of the user.
 
-[OpenClaw](https://github.com/jinyounghwa/OpenClaw) is an AI gateway that routes conversations across Telegram, WhatsApp, Discord, and other channels, orchestrating tools and LLM calls on behalf of the user. While OpenClaw handles dialogue and tool execution, it has no inherent knowledge of *who the user is* or *how they spend their time*. OpenTracker fills that gap.
+[OpenClaw](https://openclaw.ai/) is an AI gateway that routes conversations across Telegram, WhatsApp, Discord, and other channels, orchestrating tools and LLM calls on behalf of the user. While OpenClaw handles dialogue and tool execution, it has no inherent knowledge of *who the user is* or *how they spend their time*. OpenTracker fills that gap.
 
 By continuously sampling app usage, browser activity, and behavioral patterns on the local machine, OpenTracker builds a structured, time-series picture of the user's day. OpenClaw can then query this data through a local REST API, enabling it to answer questions like:
 
