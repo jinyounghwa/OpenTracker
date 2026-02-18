@@ -220,20 +220,20 @@ cp integrations/openclaw/opentracker-daily-dev/SKILL.md \
 4. Restart OpenClaw Gateway, then start a new chat session (`/new`) and ask:
 
 ```text
-오늘 개발 얼마나 했어?
+How much development time did I log today?
 ```
 
 Or run explicitly:
 
 ```text
-/skill opentracker-daily-dev 오늘 개발 얼마나 했어?
+/skill opentracker-daily-dev How much development time did I log today?
 ```
 
 Expected style:
 
 ```text
-오늘 Xcode 2시간 14분, VSCode 1시간 32분입니다.
-어제보다 40분 적네요.
+Today: Xcode 2h 14m, VSCode 1h 32m.
+That is 40 minutes less than yesterday.
 ```
 
 ### 1. Run OpenTracker API (manual integration)
@@ -266,14 +266,14 @@ curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-17&to=2026-02-17"
 
 ### 3. Conversation flow example (Telegram)
 
-1. User: `오늘 개발 얼마나 했어?`
+1. User: `How much development time did I log today?`
 2. OpenClaw tool calls OpenTracker REST API (`/api/v1/activities`) for today and yesterday.
 3. OpenClaw aggregates `activities[].app_name` + `duration_sec` (for development-focused answer).
 4. OpenClaw replies:
 
 ```text
-오늘 Xcode 2시간 14분, VSCode 1시간 32분입니다.
-어제보다 40분 적네요.
+Today: Xcode 2h 14m, VSCode 1h 32m.
+That is 40 minutes less than yesterday.
 ```
 
 ### 4. Quick troubleshooting
