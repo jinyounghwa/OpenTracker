@@ -9,8 +9,31 @@ OpenTracker is a local macOS activity intelligence system that:
 
 This README is a full installation-to-operations guide.
 
+## OpenTracker in the OpenClaw Ecosystem
+
+OpenTracker is built to serve as the **context engine** of the [OpenClaw](https://github.com/jinyounghwa/OpenClaw) ecosystem — an open-source data infrastructure layer that gives OpenClaw a structured, local understanding of the user.
+
+[OpenClaw](https://github.com/jinyounghwa/OpenClaw) is an AI gateway that routes conversations across Telegram, WhatsApp, Discord, and other channels, orchestrating tools and LLM calls on behalf of the user. While OpenClaw handles dialogue and tool execution, it has no inherent knowledge of *who the user is* or *how they spend their time*. OpenTracker fills that gap.
+
+By continuously sampling app usage, browser activity, and behavioral patterns on the local machine, OpenTracker builds a structured, time-series picture of the user's day. OpenClaw can then query this data through a local REST API, enabling it to answer questions like:
+
+- *"What did I work on this afternoon?"*
+- *"How much time did I spend coding vs. meetings this week?"*
+- *"Am I on track with my usual schedule today?"*
+
+**Key roles OpenTracker plays in the ecosystem:**
+
+| Role | Description |
+|---|---|
+| **User context layer** | Provides structured activity data that makes OpenClaw responses genuinely personalized and time-aware. |
+| **Local-first privacy** | All data stays on the user's machine. OpenClaw queries it via `localhost` REST API — no cloud upload, no third-party data sharing. |
+| **Open source infrastructure** | OpenTracker is fully open source and designed to be the community-maintained context backbone for OpenClaw integrations. It can be extended, forked, or adapted for any OpenClaw-compatible agent. |
+
+In short: **OpenClaw is the brain, OpenTracker is the memory** — a transparent, user-owned data layer that makes AI assistants genuinely context-aware without sacrificing privacy.
+
 ## Table of Contents
 
+- [OpenTracker in the OpenClaw Ecosystem](#opentracker-in-the-openclaw-ecosystem)
 - [What OpenTracker Collects](#what-opentracker-collects)
 - [System Requirements](#system-requirements)
 - [Install](#install)
