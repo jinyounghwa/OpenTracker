@@ -351,11 +351,6 @@ OpenTracker config get <key>
 | `api_port` | `api.port` | `OpenTracker config set api_port 7890` | Dashboard/API port. |
 | `retention_days` | `retention.days` | `OpenTracker config set retention_days 90` | Activity retention window. |
 | `notify_on_report` | `report.notify` | `OpenTracker config set notify_on_report true` | macOS notification after report generation. |
-| `ai_enabled` | `ai.enabled` | `OpenTracker config set ai.enabled true` | Enables OpenTracker's internal AI enrichment during report generation. Not required for OpenClaw REST integration. |
-| `ai_api_key` | `ai.api_key` | `OpenTracker config set ai.api_key <KEY>` | API key used as Bearer token (`OPENTRACKER_AI_API_KEY` also supported). Used only when `ai.enabled=true`. |
-| `ai_api_base_url` | `ai.base_url` | `OpenTracker config set ai.base_url https://api.openai.com/v1` | OpenAI-compatible base URL (no trailing `/chat/completions`). Used only when `ai.enabled=true`. |
-| `ai_model` | `ai.model` | `OpenTracker config set ai.model gpt-4o-mini` | Model name sent by OpenTracker internal AI client. Used only when `ai.enabled=true`. |
-| `ai_timeout_seconds` | `ai.timeout_seconds` | `OpenTracker config set ai.timeout_seconds 20` | AI API timeout (minimum 5 seconds). Used only when `ai.enabled=true`. |
 
 ## Local API Reference
 
