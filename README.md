@@ -187,7 +187,56 @@ Important:
 - OpenTracker only needs to expose its local API.
 - OpenClaw handles LLM/provider auth and tool orchestration.
 
-### 1. Run OpenTracker API
+### Fastest path (recommended): OpenClaw Skill + `exec` (`curl`)
+
+Because OpenClaw `web_fetch` blocks private/internal hosts (including `127.0.0.1`), local OpenTracker API calls are easiest via `exec` + `curl`.
+
+1. Run OpenTracker API:
+
+```bash
+OpenTracker start
+OpenTracker status
+```
+
+2. Install the bundled OpenClaw skill from this repo:
+
+```bash
+mkdir -p ~/.openclaw/skills/opentracker-daily-dev
+cp integrations/openclaw/opentracker-daily-dev/SKILL.md \
+  ~/.openclaw/skills/opentracker-daily-dev/SKILL.md
+```
+
+3. Ensure OpenClaw runtime tools are allowed (if you use restricted tool profile):
+
+```js
+{
+  tools: {
+    profile: "messaging",
+    allow: ["group:runtime"]
+  }
+}
+```
+
+4. Restart OpenClaw Gateway, then start a new chat session (`/new`) and ask:
+
+```text
+오늘 개발 얼마나 했어?
+```
+
+Or run explicitly:
+
+```text
+/skill opentracker-daily-dev 오늘 개발 얼마나 했어?
+```
+
+Expected style:
+
+```text
+오늘 Xcode 2시간 14분, VSCode 1시간 32분입니다.
+어제보다 40분 적네요.
+```
+
+### 1. Run OpenTracker API (manual integration)
 
 ```bash
 OpenTracker start
@@ -231,6 +280,8 @@ curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-17&to=2026-02-17"
 
 - API connection fails: ensure `OpenTracker start` is running and check `api_port`.
 - Empty/weak answer: ensure activity data is being collected (`OpenTracker doctor` / `OpenTracker status`).
+- OpenClaw cannot hit `127.0.0.1` via `web_fetch`: use `exec` + `curl` (recommended above).
+- If OpenClaw asks for command approval, approve once/always with `/approve <id> allow-once` or `/approve <id> allow-always`.
 - If using only REST integration with OpenClaw, keep OpenTracker AI enrichment disabled:
 
 ```bash
