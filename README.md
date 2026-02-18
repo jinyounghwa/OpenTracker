@@ -509,7 +509,7 @@ rm -rf ~/.OpenTracker ~/Documents/OpenTracker/reports
 - If editing dashboard manually, sync source to dist:
 
 ```bash
-cp frontend/src/index.html frontend/dist/index.html
+cd frontend/src/index.html frontend/dist/index.html
 ```
 
 - Build/test:
