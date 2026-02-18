@@ -187,18 +187,32 @@ Important:
 - OpenTracker only needs to expose its local API.
 - OpenClaw handles LLM/provider auth and tool orchestration.
 
-### Fastest path (recommended): OpenClaw Skill + `exec` (`curl`)
+### End-to-end setup: Telegram -> OpenClaw -> OpenTracker
 
-Because OpenClaw `web_fetch` blocks private/internal hosts (including `127.0.0.1`), local OpenTracker API calls are easiest via `exec` + `curl`.
+Because OpenClaw `web_fetch` blocks private/internal hosts (including `127.0.0.1`), the easiest and most reliable local integration is OpenClaw Skill + `exec` (`curl`).
 
-1. Run OpenTracker API:
+Prerequisites:
+
+- OpenTracker installed and collecting activity data.
+- OpenClaw installed and running.
+- Telegram bot token configured in OpenClaw.
+- OpenTracker API must be reachable from the machine where OpenClaw Gateway runs.
+
+1. Start OpenTracker API and verify health:
 
 ```bash
 OpenTracker start
 OpenTracker status
+curl -s http://127.0.0.1:7890/api/v1/status
 ```
 
-2. Install the bundled OpenClaw skill from this repo:
+2. (Recommended for REST-only mode) disable OpenTracker internal AI enrichment:
+
+```bash
+OpenTracker config set ai.enabled false
+```
+
+3. Install the bundled OpenClaw skill from this repo:
 
 ```bash
 mkdir -p ~/.openclaw/skills/opentracker-daily-dev
@@ -206,10 +220,23 @@ cp integrations/openclaw/opentracker-daily-dev/SKILL.md \
   ~/.openclaw/skills/opentracker-daily-dev/SKILL.md
 ```
 
-3. Ensure OpenClaw runtime tools are allowed (if you use restricted tool profile):
+4. In OpenClaw config, ensure:
+
+- Telegram channel is enabled and has `botToken`.
+- `dmPolicy` is set to `pairing` (recommended).
+- Runtime tool access is allowed (`group:runtime`) so skill can run `exec`/`curl`.
+
+Example:
 
 ```js
 {
+  channels: {
+    telegram: {
+      enabled: true,
+      botToken: "YOUR_BOT_TOKEN",
+      dmPolicy: "pairing"
+    }
+  },
   tools: {
     profile: "messaging",
     allow: ["group:runtime"]
@@ -217,7 +244,25 @@ cp integrations/openclaw/opentracker-daily-dev/SKILL.md \
 }
 ```
 
-4. Restart OpenClaw Gateway, then start a new chat session (`/new`) and ask:
+5. Start or restart OpenClaw Gateway:
+
+```bash
+openclaw gateway
+```
+
+6. Pair Telegram DM access (first-time only):
+
+```bash
+openclaw pairing list telegram
+openclaw pairing approve telegram <PAIRING_CODE>
+```
+
+Notes:
+
+- First send a message to your Telegram bot to receive a pairing code.
+- Use `openclaw pairing list telegram` to see pending requests.
+
+7. Ask in Telegram:
 
 ```text
 How much development time did I log today?
@@ -229,33 +274,18 @@ Or run explicitly:
 /skill opentracker-daily-dev How much development time did I log today?
 ```
 
-Expected style:
+Expected answer style:
 
 ```text
 Today: Xcode 2h 14m, VSCode 1h 32m.
 That is 40 minutes less than yesterday.
 ```
 
-### 1. Run OpenTracker API (manual integration)
+### APIs used by this integration
 
-```bash
-OpenTracker start
-OpenTracker status
-```
-
-Default API base URL:
-
-```text
-http://127.0.0.1:7890
-```
-
-### 2. Have OpenClaw call OpenTracker endpoints
-
-Core endpoints for chat answers:
-
-- `GET /api/v1/activities?from=YYYY-MM-DD&to=YYYY-MM-DD`
-- `GET /api/v1/report/latest` (optional, if latest daily report exists)
-- `GET /api/v1/report/:date` (optional, if date-specific report exists)
+- `GET /api/v1/activities?from=YYYY-MM-DD&to=YYYY-MM-DD` (primary)
+- `GET /api/v1/report/latest` (optional)
+- `GET /api/v1/report/:date` (optional)
 
 Example API calls (today `2026-02-18`, yesterday `2026-02-17`):
 
@@ -264,29 +294,14 @@ curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-18&to=2026-02-18"
 curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-17&to=2026-02-17"
 ```
 
-### 3. Conversation flow example (Telegram)
+### Quick troubleshooting
 
-1. User: `How much development time did I log today?`
-2. OpenClaw tool calls OpenTracker REST API (`/api/v1/activities`) for today and yesterday.
-3. OpenClaw aggregates `activities[].app_name` + `duration_sec` (for development-focused answer).
-4. OpenClaw replies:
-
-```text
-Today: Xcode 2h 14m, VSCode 1h 32m.
-That is 40 minutes less than yesterday.
-```
-
-### 4. Quick troubleshooting
-
+- OpenClaw cannot access `127.0.0.1` with `web_fetch`: use skill `exec` + `curl`.
+- OpenClaw asks command approval: run `/approve <id> allow-once` or `/approve <id> allow-always`.
+- Telegram DM does not work: check bot token and pairing status.
 - API connection fails: ensure `OpenTracker start` is running and check `api_port`.
-- Empty/weak answer: ensure activity data is being collected (`OpenTracker doctor` / `OpenTracker status`).
-- OpenClaw cannot hit `127.0.0.1` via `web_fetch`: use `exec` + `curl` (recommended above).
-- If OpenClaw asks for command approval, approve once/always with `/approve <id> allow-once` or `/approve <id> allow-always`.
-- If using only REST integration with OpenClaw, keep OpenTracker AI enrichment disabled:
-
-```bash
-OpenTracker config set ai.enabled false
-```
+- Empty/weak answer: ensure activity data exists (`OpenTracker doctor`, `OpenTracker status`).
+- If Gateway runs on another host, change the skill endpoint from `127.0.0.1` to a reachable OpenTracker API address.
 
 ## Configuration Reference
 
