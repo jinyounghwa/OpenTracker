@@ -18,7 +18,7 @@ This README is a full installation-to-operations guide.
 - [Run Modes](#run-modes)
 - [Dashboard Usage](#dashboard-usage)
 - [Generate Reports](#generate-reports)
-- [OpenClaw Integration (OpenAI-Compatible)](#openclaw-integration-openai-compatible)
+- [OpenClaw Integration (via OpenTracker REST API)](#openclaw-integration-via-opentracker-rest-api)
 - [Configuration Reference](#configuration-reference)
 - [Local API Reference](#local-api-reference)
 - [File Locations](#file-locations)
@@ -177,73 +177,65 @@ OpenTracker report --date 2026-02-18
 
 On success, CLI prints Markdown and JSON file paths.
 
-## OpenClaw Integration (OpenAI-Compatible)
+## OpenClaw Integration (via OpenTracker REST API)
 
-Yes. OpenTracker can be connected to OpenClaw Gateway because OpenTracker uses an OpenAI-compatible `POST /chat/completions` flow.
+OpenClaw can call OpenTracker local REST APIs as tools and answer user questions in Telegram/WhatsApp/Discord.
 
-### 1. Prepare OpenClaw Gateway
+Important:
 
-Start Gateway (example port `18789`):
+- For this integration, OpenTracker `ai.api_key` is **not required**.
+- OpenTracker only needs to expose its local API.
+- OpenClaw handles LLM/provider auth and tool orchestration.
 
-```bash
-openclaw gateway --port 18789
-```
-
-Enable OpenAI Chat Completions endpoint in OpenClaw config:
-
-```js
-{
-  gateway: {
-    http: {
-      endpoints: {
-        chatCompletions: { enabled: true }
-      }
-    }
-  }
-}
-```
-
-Set Gateway auth with either:
-
-- `gateway.auth.mode="token"` + `gateway.auth.token`
-- `gateway.auth.mode="password"` + `gateway.auth.password`
-
-OpenTracker sends `Authorization: Bearer <ai.api_key>`, so use your Gateway token/password value as `ai.api_key`.
-
-### 2. Connect OpenTracker to OpenClaw
+### 1. Run OpenTracker API
 
 ```bash
-OpenTracker config set ai.enabled true
-OpenTracker config set ai.base_url http://127.0.0.1:18789/v1
-OpenTracker config set ai.api_key <OPENCLAW_GATEWAY_TOKEN_OR_PASSWORD>
-OpenTracker config set ai.model openclaw:main
-OpenTracker config set ai.timeout_seconds 20
+OpenTracker start
+OpenTracker status
 ```
 
-Notes:
+Default API base URL:
 
-- `ai.base_url` must include `/v1`, because OpenTracker appends `/chat/completions`.
-- To choose a specific OpenClaw agent, set model as `openclaw:<agentId>` (example: `openclaw:main`, `openclaw:beta`).
-
-### 3. Verify connection and use it
-
-Test AI connectivity:
-
-```bash
-OpenTracker ai test
+```text
+http://127.0.0.1:7890
 ```
 
-Use AI during report generation:
+### 2. Have OpenClaw call OpenTracker endpoints
+
+Core endpoints for chat answers:
+
+- `GET /api/v1/activities?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /api/v1/report/latest` (optional, if latest daily report exists)
+- `GET /api/v1/report/:date` (optional, if date-specific report exists)
+
+Example API calls (today `2026-02-18`, yesterday `2026-02-17`):
 
 ```bash
-OpenTracker report
+curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-18&to=2026-02-18"
+curl -s "http://127.0.0.1:7890/api/v1/activities?from=2026-02-17&to=2026-02-17"
+```
+
+### 3. Conversation flow example (Telegram)
+
+1. User: `오늘 개발 얼마나 했어?`
+2. OpenClaw tool calls OpenTracker REST API (`/api/v1/activities`) for today and yesterday.
+3. OpenClaw aggregates `activities[].app_name` + `duration_sec` (for development-focused answer).
+4. OpenClaw replies:
+
+```text
+오늘 Xcode 2시간 14분, VSCode 1시간 32분입니다.
+어제보다 40분 적네요.
 ```
 
 ### 4. Quick troubleshooting
 
-- `404` from AI API: `chatCompletions.enabled` is likely not enabled on OpenClaw Gateway.
-- `401/403` from AI API: `ai.api_key` does not match OpenClaw Gateway auth token/password.
-- AI result missing in report: confirm `ai.enabled=true` and rerun `OpenTracker ai test`.
+- API connection fails: ensure `OpenTracker start` is running and check `api_port`.
+- Empty/weak answer: ensure activity data is being collected (`OpenTracker doctor` / `OpenTracker status`).
+- If using only REST integration with OpenClaw, keep OpenTracker AI enrichment disabled:
+
+```bash
+OpenTracker config set ai.enabled false
+```
 
 ## Configuration Reference
 
@@ -270,11 +262,11 @@ OpenTracker config get <key>
 | `api_port` | `api.port` | `OpenTracker config set api_port 7890` | Dashboard/API port. |
 | `retention_days` | `retention.days` | `OpenTracker config set retention_days 90` | Activity retention window. |
 | `notify_on_report` | `report.notify` | `OpenTracker config set notify_on_report true` | macOS notification after report generation. |
-| `ai_enabled` | `ai.enabled` | `OpenTracker config set ai.enabled true` | Enables AI enrichment during report generation. |
-| `ai_api_key` | `ai.api_key` | `OpenTracker config set ai.api_key <KEY>` | API key used as Bearer token (`OPENTRACKER_AI_API_KEY` also supported). |
-| `ai_api_base_url` | `ai.base_url` | `OpenTracker config set ai.base_url http://127.0.0.1:18789/v1` | OpenAI-compatible base URL (no trailing `/chat/completions`). |
-| `ai_model` | `ai.model` | `OpenTracker config set ai.model openclaw:main` | Model name sent to provider (`openclaw:<agentId>` for OpenClaw). |
-| `ai_timeout_seconds` | `ai.timeout_seconds` | `OpenTracker config set ai.timeout_seconds 20` | AI API timeout (minimum 5 seconds). |
+| `ai_enabled` | `ai.enabled` | `OpenTracker config set ai.enabled true` | Enables OpenTracker's internal AI enrichment during report generation. Not required for OpenClaw REST integration. |
+| `ai_api_key` | `ai.api_key` | `OpenTracker config set ai.api_key <KEY>` | API key used as Bearer token (`OPENTRACKER_AI_API_KEY` also supported). Used only when `ai.enabled=true`. |
+| `ai_api_base_url` | `ai.base_url` | `OpenTracker config set ai.base_url https://api.openai.com/v1` | OpenAI-compatible base URL (no trailing `/chat/completions`). Used only when `ai.enabled=true`. |
+| `ai_model` | `ai.model` | `OpenTracker config set ai.model gpt-4o-mini` | Model name sent by OpenTracker internal AI client. Used only when `ai.enabled=true`. |
+| `ai_timeout_seconds` | `ai.timeout_seconds` | `OpenTracker config set ai.timeout_seconds 20` | AI API timeout (minimum 5 seconds). Used only when `ai.enabled=true`. |
 
 ## Local API Reference
 
