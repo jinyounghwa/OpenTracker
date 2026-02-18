@@ -1,0 +1,29 @@
+{
+  "apps": {
+    "vscode": "development",
+    "xcode": "development",
+    "terminal": "development",
+    "iterm2": "development",
+    "slack": "communication",
+    "discord": "communication",
+    "mail": "communication",
+    "zoom": "communication",
+    "google chrome": "research",
+    "spotify": "entertainment"
+  },
+  "domains": {
+    "github.com": "development",
+    "stackoverflow.com": "development",
+    "notion.so": "research",
+    "docs.google.com": "research",
+    "wikipedia.org": "research",
+    "youtube.com": "entertainment",
+    "netflix.com": "entertainment",
+    "twitch.tv": "entertainment",
+    "reddit.com": "sns",
+    "twitter.com": "sns",
+    "instagram.com": "sns",
+    "amazon.com": "shopping",
+    "coupang.com": "shopping"
+  }
+}

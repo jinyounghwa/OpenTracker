@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenTracker Dashboard</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap');
+
+      :root {
+        --bg: #f4efe6;
+        --ink: #1f1915;
+        --ink-muted: #5f5248;
+        --surface: rgba(255, 255, 255, 0.7);
+        --stroke: rgba(85, 68, 58, 0.18);
+        --accent: #cc6b1b;
+        --accent-soft: #f2b373;
+        --good: #1d7a47;
+        --warn: #b44b12;
+        --danger: #9f2f2f;
+        --shadow: 0 10px 35px rgba(66, 45, 28, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Space Grotesk', 'Avenir Next', sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        background:
+          radial-gradient(900px 450px at 10% -5%, rgba(236, 157, 90, 0.35), transparent 65%),
+          radial-gradient(900px 600px at 90% 0%, rgba(170, 117, 76, 0.26), transparent 60%),
+          linear-gradient(160deg, #f8f3eb 0%, #f0e7dc 40%, #efe6da 100%);
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.2;
+        background-image: radial-gradient(circle at 20% 20%, #000 0.4px, transparent 0.4px);
+        background-size: 18px 18px;
+      }
+
+      .shell {
+        width: min(1180px, calc(100vw - 28px));
+        margin: 24px auto 48px;
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 18px;
+      }
+
+      .hero {
+        grid-column: 1 / -1;
+        border: 1px solid var(--stroke);
+        border-radius: 26px;
+        background:
+          linear-gradient(120deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.4)),
+          linear-gradient(130deg, rgba(230, 175, 115, 0.2), rgba(231, 210, 173, 0.15));
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow);
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        animation: slide-up 0.48s ease both;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 46px);
+        line-height: 1.02;
+        font-family: 'Literata', Georgia, serif;
+        letter-spacing: -0.03em;
+      }
+
+      .hero p {
+        margin: 10px 0 0;
+        color: var(--ink-muted);
+      }
+
+      .tag {
+        align-self: flex-start;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(120, 95, 74, 0.28);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .card {
+        border: 1px solid var(--stroke);
+        border-radius: 22px;
+        background: var(--surface);
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow);
+        padding: 18px;
+        animation: slide-up 0.52s ease both;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #5d4e43;
+      }
+
+      .status-grid {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .kpi {
+        display: grid;
+        gap: 2px;
+      }
+
+      .kpi .label {
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+
+      .kpi .value {
+        font-size: 19px;
+        font-weight: 600;
+      }
+
+      .tone-good {
+        color: var(--good);
+      }
+
+      .tone-warn {
+        color: var(--warn);
+      }
+
+      .tone-danger {
+        color: var(--danger);
+      }
+
+      .summary-list {
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .summary-list li {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed rgba(89, 70, 52, 0.2);
+        padding-bottom: 8px;
+      }
+
+      .summary-list li:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .bars {
+        margin-top: 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 110px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+      }
+
+      .bar-track {
+        height: 11px;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid rgba(102, 82, 66, 0.2);
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #da8a36, #cf5d22);
+      }
+
+      .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        font-size: 13px;
+      }
+
+      .reports-table th,
+      .reports-table td {
+        text-align: left;
+        padding: 9px 8px;
+        border-bottom: 1px solid rgba(88, 69, 52, 0.14);
+      }
+
+      .reports-table th {
+        color: #6a5a50;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .link-btn {
+        display: inline-block;
+        text-decoration: none;
+        color: var(--ink);
+        border: 1px solid rgba(74, 52, 35, 0.26);
+        background: rgba(255, 255, 255, 0.8);
+        padding: 4px 9px;
+        border-radius: 999px;
+        margin-right: 6px;
+        font-size: 12px;
+      }
+
+      .editor {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        resize: vertical;
+        border: 1px solid rgba(84, 61, 43, 0.24);
+        border-radius: 12px;
+        padding: 10px;
+        font: 13px/1.5 'Space Grotesk', 'Avenir Next', sans-serif;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--ink);
+      }
+
+      .actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      button {
+        border: 1px solid rgba(67, 46, 28, 0.3);
+        border-radius: 999px;
+        background: linear-gradient(135deg, #dd8f3f, #ca5e1e);
+        color: white;
+        padding: 8px 14px;
+        font: 600 13px 'Space Grotesk', sans-serif;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--ink);
+      }
+
+      .activity-controls {
+        margin-top: 14px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      input[type='date'] {
+        border: 1px solid rgba(84, 61, 43, 0.24);
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink);
+        font: 13px 'Space Grotesk', sans-serif;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .muted {
+        color: var(--ink-muted);
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      @keyframes slide-up {
+        from {
+          transform: translateY(9px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          flex-direction: column;
+        }
+
+        .editor {
+          grid-template-columns: 1fr;
+        }
+
+        .bar-row {
+          grid-template-columns: 85px 1fr auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <h1>OpenTracker<br />Activity Intelligence</h1>
+          <p>Manage today’s status, 7-day reports, category mappings, and activity logs in one place.</p>
+        </div>
+        <div class="tag" id="last-sync">Syncing...</div>
+      </section>
+
+      <section class="card">
+        <h2>Collector Status</h2>
+        <div class="status-grid" id="status-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Report Schedule (CRON)</h2>
+        <p class="muted">Daily report schedule expression: <span class="mono" id="report-cron-preview">-</span></p>
+        <div class="activity-controls">
+          <input type="time" id="report-time-input" />
+          <button id="save-report-time-btn">Save Schedule</button>
+          <span class="muted" id="report-time-save-status"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Latest Daily Report</h2>
+        <ul class="summary-list" id="latest-summary"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Category Breakdown (Today)</h2>
+        <p class="muted">Source: Chrome History domain categories</p>
+        <div class="bars" id="daily-bars"></div>
+      </section>
+
+      <section class="card">
+        <h2>Category Breakdown (7 Days)</h2>
+        <p class="muted">Source: Chrome History domain categories</p>
+        <div class="bars" id="weekly-bars"></div>
+      </section>
+
+      <section class="card">
+        <h2>Latest Top Domains</h2>
+        <ul class="summary-list" id="latest-domains"></ul>
+      </section>
+
+      <section class="card full">
+        <h2>Latest Anomalies</h2>
+        <ul class="summary-list" id="latest-anomalies"></ul>
+      </section>
+
+      <section class="card full">
+        <h2>Recent Reports</h2>
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Generated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reports-table-body"></tbody>
+        </table>
+      </section>
+
+      <section class="card full">
+        <h2>Category Mapping Editor</h2>
+        <p class="muted">Edit one rule per line in <span class="mono">key = category</span> format, then save.</p>
+        <div class="editor">
+          <div>
+            <p class="muted">Apps</p>
+            <textarea id="apps-editor" placeholder="vscode = development"></textarea>
+          </div>
+          <div>
+            <p class="muted">Domains</p>
+            <textarea id="domains-editor" placeholder="github.com = development"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="muted" id="category-save-status"></span>
+          <button id="save-categories-btn">Save Categories</button>
+        </div>
+      </section>
+
+      <section class="card full">
+        <h2>Activity Explorer</h2>
+        <div class="activity-controls">
+          <input type="date" id="from-date" />
+          <input type="date" id="to-date" />
+          <button class="secondary" id="load-activities-btn">Load Activities</button>
+        </div>
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>App</th>
+              <th>Window</th>
+              <th>Category</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="activities-table-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      const categoryOrder = [
+        'development',
+        'research',
+        'communication',
+        'entertainment',
+        'sns',
+        'shopping',
+        'other',
+      ];
+
+      const categoryLabels = {
+        development: 'Development',
+        research: 'Research',
+        communication: 'Communication',
+        entertainment: 'Entertainment',
+        sns: 'SNS',
+        shopping: 'Shopping',
+        other: 'Other',
+      };
+
+      const els = {
+        lastSync: document.getElementById('last-sync'),
+        statusGrid: document.getElementById('status-grid'),
+        latestSummary: document.getElementById('latest-summary'),
+        dailyBars: document.getElementById('daily-bars'),
+        weeklyBars: document.getElementById('weekly-bars'),
+        latestDomains: document.getElementById('latest-domains'),
+        latestAnomalies: document.getElementById('latest-anomalies'),
+        reportsBody: document.getElementById('reports-table-body'),
+        appsEditor: document.getElementById('apps-editor'),
+        domainsEditor: document.getElementById('domains-editor'),
+        saveCategoriesBtn: document.getElementById('save-categories-btn'),
+        categorySaveStatus: document.getElementById('category-save-status'),
+        fromDate: document.getElementById('from-date'),
+        toDate: document.getElementById('to-date'),
+        loadActivitiesBtn: document.getElementById('load-activities-btn'),
+        activitiesBody: document.getElementById('activities-table-body'),
+        reportTimeInput: document.getElementById('report-time-input'),
+        saveReportTimeBtn: document.getElementById('save-report-time-btn'),
+        reportTimeSaveStatus: document.getElementById('report-time-save-status'),
+        reportCronPreview: document.getElementById('report-cron-preview'),
+      };
+
+      const fetchJson = async (url, options) => {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          throw new Error(payload.error || `request failed: ${res.status}`);
+        }
+        return res.json();
+      };
+
+      const formatMinutes = (minutes) => {
+        const safe = Number(minutes || 0);
+        const h = Math.floor(safe / 60);
+        const m = safe % 60;
+        if (!h) return `${m}m`;
+        if (!m) return `${h}h`;
+        return `${h}h ${m}m`;
+      };
+
+      const isoDate = (d) => d.toISOString().slice(0, 10);
+
+      const formatLineMap = (mapObj) =>
+        Object.entries(mapObj || {})
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([k, v]) => `${k} = ${v}`)
+          .join('\n');
+
+      const parseLineMap = (raw) =>
+        raw
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .reduce((acc, line) => {
+            const [key, value] = line.split('=').map((part) => part && part.trim());
+            if (key && value) {
+              acc[key] = value;
+            }
+            return acc;
+          }, {});
+
+      const renderBarChart = (target, categories) => {
+        const total = categoryOrder.reduce((sum, key) => sum + Number(categories?.[key] || 0), 0);
+        if (total <= 0) {
+          target.innerHTML = '<p class="muted">No data available.</p>';
+          return;
+        }
+
+        target.innerHTML = categoryOrder
+          .map((key) => {
+            const value = Number(categories?.[key] || 0);
+            const ratio = total ? (value / total) * 100 : 0;
+            return `
+              <div class="bar-row">
+                <span>${categoryLabels[key]}</span>
+                <div class="bar-track"><div class="bar-fill" style="width:${ratio.toFixed(2)}%"></div></div>
+                <span>${formatMinutes(value)}</span>
+              </div>
+            `;
+          })
+          .join('');
+      };
+
+      const renderStatus = (status) => {
+        const daemonTone = status.daemon_loaded ? 'tone-good' : 'tone-warn';
+        const lastCollected = status.last_collected_at
+          ? new Date(status.last_collected_at * 1000).toLocaleString()
+          : 'none';
+
+        els.statusGrid.innerHTML = `
+          <div class="kpi"><span class="label">Daemon</span><span class="value ${daemonTone}">${status.daemon_loaded ? 'Running' : 'Not Running'}</span></div>
+          <div class="kpi"><span class="label">Latest Report</span><span class="value">${status.latest_report_date || 'none'}</span></div>
+          <div class="kpi"><span class="label">Last Collected</span><span class="value">${lastCollected}</span></div>
+          <div class="kpi"><span class="label">API</span><span class="value mono">127.0.0.1:${status.api_port}</span></div>
+        `;
+      };
+
+      const renderLatestSummary = (report) => {
+        if (!report) {
+          els.latestSummary.innerHTML = '<li><span>No report</span><span>-</span></li>';
+          return;
+        }
+
+        const topApp = report.top_apps?.[0];
+        const activeMinutes = Number(report.active_window_minutes ?? report.total_minutes ?? 0);
+        const chromeMinutes = Number(report.chrome_history_minutes ?? 0);
+        const productivity = Number(report.categories?.development || 0) + Number(report.categories?.research || 0);
+        const ratio = activeMinutes ? Math.round((productivity / activeMinutes) * 100) : 0;
+
+        els.latestSummary.innerHTML = `
+          <li><span>Date</span><strong>${report.date}</strong></li>
+          <li><span>Active Window Time</span><strong>${formatMinutes(activeMinutes)}</strong></li>
+          <li><span>Chrome History Time</span><strong>${formatMinutes(chromeMinutes)}</strong></li>
+          <li><span>Productivity</span><strong>${ratio}%</strong></li>
+          <li><span>Top App</span><strong>${topApp ? `${topApp.name} (${formatMinutes(topApp.minutes)})` : 'none'}</strong></li>
+        `;
+      };
+
+      const renderLatestDomains = (report) => {
+        const domains = report?.top_domains || [];
+        if (!domains.length) {
+          els.latestDomains.innerHTML = '<li><span>No domain data</span><span>-</span></li>';
+          return;
+        }
+
+        els.latestDomains.innerHTML = domains
+          .slice(0, 5)
+          .map((item, idx) => `<li><span>${idx + 1}. ${item.name}</span><strong>${formatMinutes(item.minutes)}</strong></li>`)
+          .join('');
+      };
+
+      const renderLatestAnomalies = (report) => {
+        const anomalies = report?.anomalies || [];
+        if (!anomalies.length) {
+          els.latestAnomalies.innerHTML = '<li><span>No anomalies detected</span><span>-</span></li>';
+          return;
+        }
+
+        els.latestAnomalies.innerHTML = anomalies
+          .slice(0, 5)
+          .map((entry) => `<li><span>${entry}</span><span></span></li>`)
+          .join('');
+      };
+
+      const renderReports = (reports) => {
+        if (!reports.length) {
+          els.reportsBody.innerHTML = '<tr><td colspan="3" class="muted">No reports generated yet.</td></tr>';
+          return;
+        }
+
+        els.reportsBody.innerHTML = reports
+          .map((report) => {
+            const generated = new Date(report.generated_at * 1000).toLocaleString();
+            return `
+              <tr>
+                <td>${report.date}</td>
+                <td>${generated}</td>
+                <td>
+                  <a class="link-btn" href="${report.markdown_url}" target="_blank" rel="noreferrer">Markdown</a>
+                  <a class="link-btn" href="${report.json_url}" target="_blank" rel="noreferrer">JSON</a>
+                  <a class="link-btn" href="${report.markdown_download_url}" download>Download MD</a>
+                  <a class="link-btn" href="${report.json_download_url}" download>Download JSON</a>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+      };
+
+      const renderActivities = (items) => {
+        if (!items.length) {
+          els.activitiesBody.innerHTML = '<tr><td colspan="5" class="muted">No activities found for the selected range.</td></tr>';
+          return;
+        }
+
+        els.activitiesBody.innerHTML = items
+          .slice(-120)
+          .reverse()
+          .map((activity) => {
+            const ts = new Date(activity.recorded_at * 1000).toLocaleString();
+            return `
+              <tr>
+                <td>${ts}</td>
+                <td>${activity.app_name}</td>
+                <td>${activity.window_title || '-'}</td>
+                <td>${activity.category}</td>
+                <td>${activity.duration_sec}s</td>
+              </tr>
+            `;
+          })
+          .join('');
+      };
+
+      const loadCategories = async () => {
+        const categories = await fetchJson('/api/v1/categories');
+        els.appsEditor.value = formatLineMap(categories.apps || {});
+        els.domainsEditor.value = formatLineMap(categories.domains || {});
+      };
+
+      const saveCategories = async () => {
+        els.categorySaveStatus.textContent = 'saving...';
+        const payload = {
+          apps: parseLineMap(els.appsEditor.value),
+          domains: parseLineMap(els.domainsEditor.value),
+        };
+
+        await fetchJson('/api/v1/categories', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        els.categorySaveStatus.textContent = 'saved';
+        setTimeout(() => {
+          els.categorySaveStatus.textContent = '';
+        }, 1800);
+      };
+
+      const loadActivities = async () => {
+        const from = els.fromDate.value;
+        const to = els.toDate.value;
+        const params = new URLSearchParams({ from, to });
+        const payload = await fetchJson(`/api/v1/activities?${params.toString()}`);
+        renderActivities(payload.activities || []);
+      };
+
+      const collectWeeklyCategories = (reports) =>
+        reports.reduce((acc, report) => {
+          const source = report?.chrome_categories || report?.categories || {};
+          categoryOrder.forEach((category) => {
+            const current = Number(acc[category] || 0);
+            const next = Number(source[category] || 0);
+            acc[category] = current + next;
+          });
+          return acc;
+        }, {});
+
+      const loadReportSchedule = async () => {
+        const payload = await fetchJson('/api/v1/settings/report-schedule');
+        els.reportTimeInput.value = payload.report_time;
+        els.reportCronPreview.textContent = payload.cron_expression || '-';
+      };
+
+      const saveReportSchedule = async () => {
+        const reportTime = (els.reportTimeInput.value || '').trim();
+        if (!reportTime) {
+          throw new Error('Please select a report time.');
+        }
+
+        els.reportTimeSaveStatus.textContent = 'saving...';
+        const payload = await fetchJson('/api/v1/settings/report-schedule', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ report_time: reportTime }),
+        });
+
+        els.reportTimeInput.value = payload.report_time;
+        els.reportCronPreview.textContent = payload.cron_expression || '-';
+        els.reportTimeSaveStatus.textContent = 'saved';
+        setTimeout(() => {
+          els.reportTimeSaveStatus.textContent = '';
+        }, 1800);
+      };
+
+      const init = async () => {
+        try {
+          const today = new Date();
+          els.fromDate.value = isoDate(today);
+          els.toDate.value = isoDate(today);
+
+          const [status, reportsPayload] = await Promise.all([
+            fetchJson('/api/v1/status'),
+            fetchJson('/api/v1/reports?limit=7'),
+          ]);
+
+          renderStatus(status);
+          els.lastSync.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+
+          const reports = reportsPayload.reports || [];
+          renderReports(reports);
+
+          let latestReport = null;
+          let reportDetails = [];
+          if (reports.length) {
+            reportDetails = await Promise.all(
+              reports.map((report) => fetchJson(report.json_url).catch(() => null))
+            );
+            latestReport = reportDetails.find(Boolean);
+          }
+
+          renderLatestSummary(latestReport);
+          renderLatestDomains(latestReport);
+          renderLatestAnomalies(latestReport);
+          renderBarChart(els.dailyBars, latestReport?.chrome_categories || latestReport?.categories || {});
+          renderBarChart(els.weeklyBars, collectWeeklyCategories(reportDetails.filter(Boolean)));
+
+          await Promise.all([loadCategories(), loadActivities(), loadReportSchedule()]);
+        } catch (error) {
+          console.error(error);
+          els.lastSync.textContent = `Error: ${error.message}`;
+          els.lastSync.style.borderColor = 'rgba(166, 47, 47, 0.45)';
+          els.lastSync.style.color = '#9f2f2f';
+        }
+      };
+
+      els.saveCategoriesBtn.addEventListener('click', () => {
+        saveCategories().catch((error) => {
+          els.categorySaveStatus.textContent = error.message;
+          els.categorySaveStatus.className = 'tone-danger';
+        });
+      });
+
+      els.loadActivitiesBtn.addEventListener('click', () => {
+        loadActivities().catch((error) => {
+          els.activitiesBody.innerHTML = `<tr><td colspan="5" class="tone-danger">${error.message}</td></tr>`;
+        });
+      });
+
+      els.saveReportTimeBtn.addEventListener('click', () => {
+        saveReportSchedule().catch((error) => {
+          els.reportTimeSaveStatus.textContent = error.message;
+          els.reportTimeSaveStatus.className = 'tone-danger';
+        });
+      });
+
+      init();
+    </script>
+  </body>
+</html>
