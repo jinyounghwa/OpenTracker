@@ -18,6 +18,7 @@ This README is a full installation-to-operations guide.
 - [Run Modes](#run-modes)
 - [Dashboard Usage](#dashboard-usage)
 - [Generate Reports](#generate-reports)
+- [OpenClaw Integration (OpenAI-Compatible)](#openclaw-integration-openai-compatible)
 - [Configuration Reference](#configuration-reference)
 - [Local API Reference](#local-api-reference)
 - [File Locations](#file-locations)
@@ -176,6 +177,74 @@ OpenTracker report --date 2026-02-18
 
 On success, CLI prints Markdown and JSON file paths.
 
+## OpenClaw Integration (OpenAI-Compatible)
+
+Yes. OpenTracker can be connected to OpenClaw Gateway because OpenTracker uses an OpenAI-compatible `POST /chat/completions` flow.
+
+### 1. Prepare OpenClaw Gateway
+
+Start Gateway (example port `18789`):
+
+```bash
+openclaw gateway --port 18789
+```
+
+Enable OpenAI Chat Completions endpoint in OpenClaw config:
+
+```js
+{
+  gateway: {
+    http: {
+      endpoints: {
+        chatCompletions: { enabled: true }
+      }
+    }
+  }
+}
+```
+
+Set Gateway auth with either:
+
+- `gateway.auth.mode="token"` + `gateway.auth.token`
+- `gateway.auth.mode="password"` + `gateway.auth.password`
+
+OpenTracker sends `Authorization: Bearer <ai.api_key>`, so use your Gateway token/password value as `ai.api_key`.
+
+### 2. Connect OpenTracker to OpenClaw
+
+```bash
+OpenTracker config set ai.enabled true
+OpenTracker config set ai.base_url http://127.0.0.1:18789/v1
+OpenTracker config set ai.api_key <OPENCLAW_GATEWAY_TOKEN_OR_PASSWORD>
+OpenTracker config set ai.model openclaw:main
+OpenTracker config set ai.timeout_seconds 20
+```
+
+Notes:
+
+- `ai.base_url` must include `/v1`, because OpenTracker appends `/chat/completions`.
+- To choose a specific OpenClaw agent, set model as `openclaw:<agentId>` (example: `openclaw:main`, `openclaw:beta`).
+
+### 3. Verify connection and use it
+
+Test AI connectivity:
+
+```bash
+OpenTracker ai test
+```
+
+Use AI during report generation:
+
+```bash
+OpenTracker report
+```
+
+### 4. Quick troubleshooting
+
+- `404` from AI API: `chatCompletions.enabled` is likely not enabled on OpenClaw Gateway.
+- `401/403` from AI API: `ai.api_key` does not match OpenClaw Gateway auth token/password.
+- AI result missing in report: confirm `ai.enabled=true` and rerun `OpenTracker ai test`.
+
 ## Configuration Reference
 
 Set a value:
@@ -201,6 +270,11 @@ OpenTracker config get <key>
 | `api_port` | `api.port` | `OpenTracker config set api_port 7890` | Dashboard/API port. |
 | `retention_days` | `retention.days` | `OpenTracker config set retention_days 90` | Activity retention window. |
 | `notify_on_report` | `report.notify` | `OpenTracker config set notify_on_report true` | macOS notification after report generation. |
+| `ai_enabled` | `ai.enabled` | `OpenTracker config set ai.enabled true` | Enables AI enrichment during report generation. |
+| `ai_api_key` | `ai.api_key` | `OpenTracker config set ai.api_key <KEY>` | API key used as Bearer token (`OPENTRACKER_AI_API_KEY` also supported). |
+| `ai_api_base_url` | `ai.base_url` | `OpenTracker config set ai.base_url http://127.0.0.1:18789/v1` | OpenAI-compatible base URL (no trailing `/chat/completions`). |
+| `ai_model` | `ai.model` | `OpenTracker config set ai.model openclaw:main` | Model name sent to provider (`openclaw:<agentId>` for OpenClaw). |
+| `ai_timeout_seconds` | `ai.timeout_seconds` | `OpenTracker config set ai.timeout_seconds 20` | AI API timeout (minimum 5 seconds). |
 
 ## Local API Reference
 
