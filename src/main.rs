@@ -56,10 +56,7 @@ async fn main() -> Result<()> {
             let config = load_config()?;
             run_service(config).await
         }
-        Commands::Update => {
-            println!("Update to latest version: cargo install --path . --force");
-            Ok(())
-        }
+        Commands::Update => handle_update(),
         Commands::Uninstall => handle_uninstall(),
     }
 }
@@ -291,9 +288,46 @@ fn handle_uninstall() -> Result<()> {
         }
     }
 
-    println!("Remove binary: cargo uninstall opentracker");
+    let current_exe = std::env::current_exe().context("Failed to resolve current executable")?;
+    match fs::remove_file(&current_exe) {
+        Ok(_) => println!("Removed binary: {}", current_exe.display()),
+        Err(error) => {
+            println!("Failed to remove binary automatically: {error}");
+            println!("Remove binary manually: rm {}", current_exe.display());
+        }
+    }
+
     println!("Remove data (optional): rm -rf ~/.OpenTracker ~/Documents/OpenTracker/reports");
 
+    Ok(())
+}
+
+fn handle_update() -> Result<()> {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let workdir = if manifest_dir.join("Cargo.toml").exists() {
+        manifest_dir
+    } else {
+        let cwd = std::env::current_dir().context("Failed to resolve current directory")?;
+        if cwd.join("Cargo.toml").exists() {
+            cwd
+        } else {
+            bail!(
+                "Could not find OpenTracker source repo. Run this command from the OpenTracker project directory."
+            );
+        }
+    };
+
+    let status = Command::new("cargo")
+        .current_dir(&workdir)
+        .args(["install", "--path", ".", "--force"])
+        .status()
+        .context("Failed to execute cargo install for update")?;
+
+    if !status.success() {
+        bail!("OpenTracker update failed");
+    }
+
+    println!("OpenTracker updated successfully");
     Ok(())
 }
 

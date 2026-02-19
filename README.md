@@ -88,7 +88,7 @@ No remote upload is required for core functionality.
 ```bash
 git clone https://github.com/jinyounghwa/OpenTracker.git
 cd OpenTracker
-cargo install --path .
+./install.sh
 ```
 
 If `OpenTracker` is not found after install, ensure Cargo bin path is on `PATH`:
@@ -419,7 +419,7 @@ Default paths:
 ### 1. `OpenTracker` command not found
 
 - Ensure `~/.cargo/bin` is in `PATH`.
-- Reinstall: `cargo install --path . --force`.
+- Reinstall: `./install.sh`.
 
 ### 2. Dashboard/API not reachable
 
@@ -465,16 +465,10 @@ OpenTracker doctor
 ### Upgrade
 
 ```bash
-cargo install --path . --force
-```
-
-Or:
-
-```bash
 OpenTracker update
 ```
 
-(`update` prints the install command; it does not auto-upgrade by itself.)
+(`update` runs `cargo install --path . --force` internally from the OpenTracker repo.)
 
 ### Uninstall helper
 
@@ -482,13 +476,7 @@ OpenTracker update
 OpenTracker uninstall
 ```
 
-This unloads/removes daemon plist guidance and prints cleanup instructions.
-
-To remove binary:
-
-```bash
-cargo uninstall opentracker
-```
+This unloads the daemon, removes plist, and attempts to remove the current OpenTracker binary.
 
 To remove local data (optional):
 
